@@ -19,8 +19,6 @@ public class ScenarioStep
     [Header("アクション設定")]
     public ActionType Action;       // Next, Click, Drag
     public string TargetObjectName; // 操作対象の名前 (ここだけは文字列で指定)
-    
-    // リストのインデックスで管理するため、IDは自動的に「リストの並び順」になります
 }
 
 public enum ActionType
@@ -34,5 +32,9 @@ public enum ActionType
 [CreateAssetMenu(fileName = "NewScenario", menuName = "Catan/ScenarioData")]
 public class ScenarioData : ScriptableObject
 {
+    [Header("シナリオ全体設定")]
+    public string ScenarioTitle; // ★追加：このシナリオのタイトル（例：「第1章 開拓」）
+
+    [Header("スライドデータ")]
     public List<ScenarioStep> Steps; // ここにステップをどんどん追加していく
 }
