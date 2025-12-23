@@ -77,8 +77,12 @@ public class ScenarioPlayer : MonoBehaviour
         // 3. ★追加：ボイス再生処理
         if (step.VoiceClip != null)
         {
-            VoiceSource.clip = step.VoiceClip; // カセットを入れる
-            VoiceSource.Play();              // 再生！
+            // 「今セットされている音」と「次の音」が違う場合だけ、再生し直す
+            if (VoiceSource.clip != step.VoiceClip)
+            {
+                VoiceSource.clip = step.VoiceClip; // 新しいカセットに入れ替え
+                VoiceSource.Play();              // 最初から再生
+            }
         }
         else
         {
@@ -116,5 +120,11 @@ public class ScenarioPlayer : MonoBehaviour
             currentStepIndex--;
             ShowStep();
         }
+    }
+    
+    public void StopAllAudio()
+    {
+        if (VoiceSource != null) VoiceSource.Stop();
+        if (SeSource != null) SeSource.Stop();
     }
 }

@@ -10,6 +10,11 @@ public class ChapterData
 {
     public string ChapterName;          // 章の名前（メモ用）
     public List<ScenarioData> Scenarios; // その章に含まれるシナリオのリスト
+    
+    [Header("UI素材")]
+    public Sprite SectionButtonSprite; // セクションボタンの背景画像
+    public Sprite BackButtonSprite;    // 「戻る」ボタンの背景画像
+    public Sprite DecorationSprite;    // ボタンの上の装飾画像（キャラなど）
 }
 
 public class AppManager : MonoBehaviour
@@ -21,6 +26,7 @@ public class AppManager : MonoBehaviour
     public GameObject GamePanel;
     public GameObject InGameMenuPanel;
     
+    
     [Header("Video System")]
     public GameObject VideoPanel; 
     public VideoPlayer OpeningVideoPlayer;
@@ -28,6 +34,8 @@ public class AppManager : MonoBehaviour
 
     [Header("Dynamic UI")]
     public TextMeshProUGUI SectionTitleText;
+    public Image BackButtonImage;    // 戻るボタンのImage本体
+    public Image DecorationImage;    // 装飾画像のImage本体
     
     public List<ChapterData> Chapters; 
     
@@ -53,6 +61,8 @@ public class AppManager : MonoBehaviour
 
     public void GoToChapterSelect()
     {
+        if (scenarioPlayer != null) scenarioPlayer.StopAllAudio();
+        
         HideAllPanels();
         ChapterSelectPanel.SetActive(true);
     }
@@ -77,43 +87,44 @@ public class AppManager : MonoBehaviour
         HideAllPanels();
         SectionSelectPanel.SetActive(true);
 
+        // データが存在しない場合は何もしない（エラー防止）
+        if (chapterId >= Chapters.Count) return;
+
+        // 現在の章データを取得
+        ChapterData currentChapter = Chapters[chapterId];
+
         // 1. タイトル書き換え
-        if (chapterId < Chapters.Count)
-        {
-            SectionTitleText.text = Chapters[chapterId].ChapterName;
-        }
+        SectionTitleText.text = currentChapter.ChapterName;
 
-        // 2. ★重要: ボタンの中身を動的に書き換える
-        // その章にシナリオがいくつあるか確認
-        int scenarioCount = 0;
-        if (chapterId < Chapters.Count)
-        {
-            scenarioCount = Chapters[chapterId].Scenarios.Count;
-        }
+        // 2. ★追加: 画像素材の動的差し替え
+        // 戻るボタンと装飾画像を、その章のものに変更
+        if (BackButtonImage != null) BackButtonImage.sprite = currentChapter.BackButtonSprite;
+        if (DecorationImage != null) DecorationImage.sprite = currentChapter.DecorationSprite;
 
-        // ボタンの数だけループして設定
+        // 3. ボタンの中身を動的に書き換える
+        int scenarioCount = currentChapter.Scenarios.Count;
         for (int i = 0; i < SectionButtons.Length; i++)
         {
-            // データが存在するならボタンを表示して機能を割り当て
             if (i < scenarioCount)
             {
                 SectionButtons[i].gameObject.SetActive(true);
-                
-                // ボタンのテキストをシナリオタイトルに変える（もしボタン内にTextがあれば）
-                TextMeshProUGUI btnText = SectionButtons[i].GetComponentInChildren<TextMeshProUGUI>();
-                if (btnText != null)
-                {
-                    btnText.text = Chapters[chapterId].Scenarios[i].ScenarioTitle;
-                }
 
-                // クリックイベントの再登録（ここが味噌！）
-                int targetSectionIndex = i; // 一時変数が必要
+                // ★追加: セクションボタンの背景画像を差し替える
+                Image btnImage = SectionButtons[i].GetComponent<Image>();
+                if (btnImage != null)
+                {
+                    btnImage.sprite = currentChapter.SectionButtonSprite;
+                }
+                
+                // (テキスト設定とクリックイベント登録はそのまま)
+                TextMeshProUGUI btnText = SectionButtons[i].GetComponentInChildren<TextMeshProUGUI>();
+                if (btnText != null) btnText.text = currentChapter.Scenarios[i].ScenarioTitle;
+                int targetSectionIndex = i;
                 SectionButtons[i].onClick.RemoveAllListeners();
                 SectionButtons[i].onClick.AddListener(() => StartGame(chapterId, targetSectionIndex));
             }
             else
             {
-                // データがないボタンは隠す
                 SectionButtons[i].gameObject.SetActive(false);
             }
         }
