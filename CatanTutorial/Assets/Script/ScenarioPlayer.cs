@@ -10,6 +10,10 @@ public class ScenarioPlayer : MonoBehaviour
     public Image SlideImage;        // 左側のメイン画像
     public Image CharacterImage;    // キャラクター
     public TextMeshProUGUI MessageText; // セリフ文字
+    
+    [Header("Audio")]
+    public AudioSource VoiceSource; // ★追加：ボイス用スピーカー
+    public AudioSource SeSource;    // ★追加：効果音用スピーカー
 
     [Header("Navigation Buttons")]
     public Button NextButton;       // 「次へ」ボタン
@@ -70,7 +74,25 @@ public class ScenarioPlayer : MonoBehaviour
         if (step.BgImage != null) BgImage.sprite = step.BgImage;
         if (step.CenterImage != null) SlideImage.sprite = step.CenterImage;
 
-        // 3. ボタン表示制御
+        // 3. ★追加：ボイス再生処理
+        if (step.VoiceClip != null)
+        {
+            VoiceSource.clip = step.VoiceClip; // カセットを入れる
+            VoiceSource.Play();              // 再生！
+        }
+        else
+        {
+            // ボイスがない時は止める？（前のセリフとかぶらないように）
+            VoiceSource.Stop(); 
+        }
+
+        // 4. ★追加：効果音(SE)再生処理
+        if (step.SeClip != null)
+        {
+            SeSource.PlayOneShot(step.SeClip); // SEは「重ねて」鳴らす
+        }
+
+        // 5. ボタン表示制御
         PrevButton.gameObject.SetActive(currentStepIndex > 0);
     }
 
