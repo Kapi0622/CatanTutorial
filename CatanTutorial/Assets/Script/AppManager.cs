@@ -25,7 +25,7 @@ public class AppManager : MonoBehaviour
     public GameObject SectionSelectPanel;
     public GameObject GamePanel;
     public GameObject InGameMenuPanel;
-    
+    public GameObject PracticePanel;
     
     [Header("Video System")]
     public GameObject VideoPanel; 
@@ -45,6 +45,8 @@ public class AppManager : MonoBehaviour
     public ScenarioPlayer scenarioPlayer;
 
     private int currentChapterId = 0; 
+    
+    private int currentSectionIndex = 0;
 
     void Start()
     {
@@ -132,6 +134,9 @@ public class AppManager : MonoBehaviour
 
     public void StartGame(int chapterId, int sectionIndex)
     {
+        currentChapterId = chapterId;
+        currentSectionIndex = sectionIndex;
+        
         HideAllPanels();
         GamePanel.SetActive(true);
 
@@ -199,6 +204,28 @@ public class AppManager : MonoBehaviour
         VideoPanel.SetActive(false);
         GoToChapterSelect();
     }
+    
+    public void GoToPractice()
+    {
+        GamePanel.SetActive(false);
+        PracticePanel.SetActive(true);
+        
+        if (currentChapterId == 1) // 第1章なら
+        {
+            // Chapter1Managerを取得して、セクション番号を渡して起動！
+            var manager = GetComponent<Chapter1Manager>();
+            if (manager != null)
+            {
+                manager.StartPractice(currentSectionIndex);
+            }
+        }
+    }
+    
+    public void BackToLearning()
+    {
+        PracticePanel.SetActive(false);
+        GamePanel.SetActive(true);
+    }
 
     // --- メニュー系 (既存のまま) ---
     public void OpenGameMenu() { InGameMenuPanel.SetActive(true); }
@@ -214,5 +241,6 @@ public class AppManager : MonoBehaviour
         if(GamePanel) GamePanel.SetActive(false);
         if(InGameMenuPanel) InGameMenuPanel.SetActive(false);
         if(VideoPanel) VideoPanel.SetActive(false);
+        if(PracticePanel) PracticePanel.SetActive(false);
     }
 }
