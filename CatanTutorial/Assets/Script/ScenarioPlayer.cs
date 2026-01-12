@@ -1,27 +1,33 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections; // コルーチン用
 
 public class ScenarioPlayer : MonoBehaviour
 {
     [Header("UI Components")]
-    public TextMeshProUGUI HeaderTitleText; // ヘッダーのタイトル文字
-    public Image BgImage;           // 背景
-    public Image SlideImage;        // 左側のメイン画像
-    public Image CharacterImage;    // キャラクター
-    public TextMeshProUGUI MessageText; // セリフ文字
+    public TextMeshProUGUI HeaderTitleText; 
+    public Image BgImage;           
+    public Image SlideImage;        
+    public Image CharacterImage;    
+    public TextMeshProUGUI MessageText; 
     
     [Header("Audio")]
-    public AudioSource VoiceSource; // ボイス用スピーカー
-    public AudioSource SeSource;    // 効果音用スピーカー
+    public AudioSource VoiceSource; 
+    public AudioSource SeSource;    
 
     [Header("Navigation Buttons")]
-    public Button NextButton;       // 「次へ」ボタン
-    public Button PrevButton;       // 「戻る」ボタン
+    public Button NextButton;       
+    public Button PrevButton;       
+
+    [Header("Settings")]
+    public float TypeSpeed = 0.05f; // 1文字表示するのにかかる時間（秒）
 
     [Header("Data (Debug)")]
-    public ScenarioData currentScenario; // 現在再生中のデータ
-    public int currentStepIndex = 0;     // 今何枚目か
+    public ScenarioData currentScenario; 
+    public int currentStepIndex = 0;     
+
+    private Coroutine typingCoroutine; // 現在動いている文字送り処理
 
     // AppManagerから呼ばれる
     public void StartScenario(ScenarioData data)
@@ -72,8 +78,15 @@ public class ScenarioPlayer : MonoBehaviour
 
         ScenarioStep step = currentScenario.Steps[currentStepIndex];
 
-        // 1. テキスト更新
-        if(MessageText) MessageText.text = step.MainText;
+        // 1. テキスト更新（タイプライター演出）
+        if(MessageText)
+        {
+            // 前の文字送りが動いていたら止める
+            if (typingCoroutine != null) StopCoroutine(typingCoroutine);
+            
+            // 新しい文字送りを開始
+            typingCoroutine = StartCoroutine(TypeWriterEffect(step.MainText));
+        }
 
         // 2. 画像更新
         if (step.BgImage != null && BgImage) BgImage.sprite = step.BgImage;
@@ -102,11 +115,9 @@ public class ScenarioPlayer : MonoBehaviour
             SeSource.PlayOneShot(step.SeClip); 
         }
 
-        // 5. ボタン表示制御 ★修正箇所
-        // 最初のページなら「戻る」を隠す
+        // 5. ボタン表示制御
         if (PrevButton) PrevButton.gameObject.SetActive(currentStepIndex > 0);
 
-        // 最後のページなら「次へ」を隠す
         if (NextButton)
         {
             bool isLastPage = (currentStepIndex >= currentScenario.Steps.Count - 1);
@@ -114,13 +125,43 @@ public class ScenarioPlayer : MonoBehaviour
         }
     }
 
+    // ★追加: 1文字ずつ表示するコルーチン
+    IEnumerator TypeWriterEffect(string fullText)
+    {
+        MessageText.text = ""; // いったん空にする
+
+        foreach (char c in fullText)
+        {
+            MessageText.text += c; // 1文字足す
+            yield return new WaitForSeconds(TypeSpeed); // 少し待つ
+        }
+
+        typingCoroutine = null; // 完了したら空にする
+    }
+
     public void OnClickNext()
     {
-        // 最後のページなら何もしない（ボタンが消えているはずだが念のため）
-        if (currentStepIndex >= currentScenario.Steps.Count - 1)
+        // もし文字送り中だったら、一瞬で全文表示して止める（スキップ機能）
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+            
+            // 全文を表示
+            if (currentScenario != null && currentScenario.Steps.Count > 0)
+            {
+                MessageText.text = currentScenario.Steps[currentStepIndex].MainText;
+            }
+            return; // ここで処理を終わる（次のページには行かない）
+        }
+
+        // 最後のページなら何もしない
+        if (currentScenario != null && currentStepIndex >= currentScenario.Steps.Count - 1)
         {
             return;
         }
+
+        // 次のページへ
         currentStepIndex++;
         ShowStep();
     }
